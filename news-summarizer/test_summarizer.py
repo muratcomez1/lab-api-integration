@@ -22,7 +22,7 @@ def test_processes_articles(mock_fetch, mock_providers):
     summarizer = NewsSummarizer()
     summarizer.run()
 
-    mock_fetch.assert_called_once_with(limit=2)
+    mock_fetch.assert_called_once_with(limit=10)
     provider.summarize.assert_called_once()
     provider.analyze_sentiment.assert_called_once()
 
