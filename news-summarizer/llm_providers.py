@@ -1,15 +1,20 @@
 
 from openai import OpenAI
-import cohere
+
+try:
+    from anthropic import Anthropic
+except ImportError:  # Keep unit tests runnable before dependencies are installed.
+    Anthropic = None
+
 from config import Config
 
 
 class LLMProviders:
     def __init__(self):
         self.openai_client = OpenAI(api_key=Config.OPENAI_API_KEY)
-        self.cohere_client = cohere.ClientV2(
-            api_key=Config.COHERE_API_KEY
-        )
+        if Anthropic is None:
+            raise ImportError("Install dependencies with: pip install -r requirements.txt")
+        self.anthropic_client = Anthropic(api_key=Config.ANTHROPIC_API_KEY)
         self.total_cost = 0.0
 
     def summarize(self, text):
@@ -32,17 +37,20 @@ class LLMProviders:
         return response.choices[0].message.content
 
     def analyze_sentiment(self, text):
-        response = self.cohere_client.chat(
-            model="command-a-03-2025",
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
-                        "Classify the sentiment as positive, negative, "
-                        "or neutral. Return only the classification.\n\n"
-                        f"{text}"
-                    ),
-                }
-            ],
+        response = self.anthropic_client.messages.create(
+            model="claude-3-5-haiku-latest",
+            max_tokens=10,
+            messages=[{
+                "role": "user",
+                "content": (
+                    "Classify the sentiment as positive, negative, or neutral. "
+                    f"Return only the classification.\n\n{text}"
+                ),
+            }],
         )
-        return response.message.content[0].text.strip()
+        if response.usage:
+            self.total_cost += (
+                response.usage.input_tokens * 0.0000008
+                + response.usage.output_tokens * 0.000004
+            )
+        return response.content[0].text.strip()

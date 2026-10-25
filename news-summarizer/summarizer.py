@@ -1,35 +1,8 @@
 
 from news_api import fetch_articles
 from llm_providers import LLMProviders
-from collections import Counter
-import re
-
-
-STOP_WORDS = {
-    "the", "and", "for", "that", "with", "this", "from", "are",
-    "was", "were", "has", "have", "had", "will", "its", "into",
-    "about", "after", "before", "over", "under", "their", "they",
-    "you", "your", "not", "but", "said", "says", "than", "then",
-    "new", "more", "also", "could", "would", "been", "being",
-    "his", "her", "our", "out", "who", "what", "when", "where",
-    "how", "all", "can", "may", "one", "two", "per", "via"
-}
-
-
-def trending_topics(articles, top_n=10):
-    """Identify frequently mentioned keywords across news articles."""
-    counts = Counter()
-
-    for article in articles:
-        text = (
-            f"{article.get('title', '')} "
-            f"{article.get('description', '')} "
-            f"{article.get('summary', '')}"
-        )
-        words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
-        counts.update(word for word in words if word not in STOP_WORDS)
-
-    return counts.most_common(top_n)
+from analytics import trending_topics
+import time
 
 
 class NewsSummarizer:
@@ -45,7 +18,9 @@ class NewsSummarizer:
 
         processed_articles = []
 
-        for article in articles:
+        for index, article in enumerate(articles):
+            if index:
+                time.sleep(0.2)  # Small client-side delay to respect provider limits.
             title = article.get("title") or "Untitled"
             description = article.get("description") or title
 
@@ -56,6 +31,7 @@ class NewsSummarizer:
                 sentiment = self.providers.analyze_sentiment(summary)
 
                 article["summary"] = summary
+                article["sentiment"] = sentiment
                 processed_articles.append(article)
 
                 print(f"Summary: {summary}")
@@ -63,6 +39,10 @@ class NewsSummarizer:
 
             except Exception as error:
                 print(f"Processing failed: {error}")
+                # Preserve the article in the output when one provider fails.
+                article["summary"] = description
+                article["sentiment"] = "unavailable"
+                processed_articles.append(article)
 
         print("\n=== Trending Topics ===")
         topics = trending_topics(processed_articles)
@@ -78,7 +58,7 @@ class NewsSummarizer:
         except (TypeError, ValueError):
             cost = "unavailable"
 
-        print(f"\nEstimated OpenAI cost: {cost}")
+        print(f"\nEstimated total provider cost: {cost}")
 
 
 if __name__ == "__main__":

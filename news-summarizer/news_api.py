@@ -14,17 +14,24 @@ def fetch_articles(limit=3):
     if not Config.NEWS_API_KEY:
         raise ValueError("NEWS_API_KEY is not configured")
 
-    response = requests.get(
-        URL,
-        params={
-            "category": "technology",
-            "language": "en",
-            "pageSize": limit,
-            "apiKey": Config.NEWS_API_KEY,
-        },
-        timeout=Config.REQUEST_TIMEOUT,
-    )
-    response.raise_for_status()
+    params = {
+        "category": "technology",
+        "language": "en",
+        "pageSize": limit,
+        "apiKey": Config.NEWS_API_KEY,
+    }
+    response = None
+    for attempt in range(Config.MAX_RETRIES):
+        try:
+            response = requests.get(URL, params=params, timeout=Config.REQUEST_TIMEOUT)
+            response.raise_for_status()
+            break
+        except requests.RequestException:
+            if attempt == Config.MAX_RETRIES - 1:
+                raise
+
+    if response is None:  # Defensive guard for type checkers and future changes.
+        raise RuntimeError("NewsAPI request did not return a response")
 
     data = response.json()
     return data.get("articles", [])[:limit]

@@ -14,7 +14,11 @@ def trending_topics(articles, top_n=10):
     counts = Counter()
 
     for article in articles:
-        text = f"{article.get('title', '')} {article.get('summary', '')}"
+        text = (
+            f"{article.get('title', '')} "
+            f"{article.get('description', '')} "
+            f"{article.get('summary', '')}"
+        )
         words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
         counts.update(word for word in words if word not in STOP_WORDS)
 

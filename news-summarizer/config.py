@@ -7,7 +7,7 @@ load_dotenv()
 
 class Config:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
     ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
@@ -19,7 +19,7 @@ class Config:
 def validate_config():
     required_keys = {
         "OPENAI_API_KEY": Config.OPENAI_API_KEY,
-        "COHERE_API_KEY": Config.COHERE_API_KEY,
+        "ANTHROPIC_API_KEY": Config.ANTHROPIC_API_KEY,
         "NEWS_API_KEY": Config.NEWS_API_KEY,
     }
 
